@@ -4,6 +4,7 @@ import co.com.crediya.api.config.UsuarioPath;
 import co.com.crediya.api.dto.RolDTO;
 import co.com.crediya.api.dto.UsuarioDTO;
 import co.com.crediya.api.handler.GlobalExceptionHandler;
+import co.com.crediya.api.mapper.UsuarioMapper;
 import co.com.crediya.model.rol.Rol;
 import co.com.crediya.model.usuario.Usuario;
 import co.com.crediya.usecase.usuario.UsuarioUseCase;
@@ -11,10 +12,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -27,7 +28,7 @@ import java.util.Date;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@ContextConfiguration(classes = {RouterRest.class, Handler.class, GlobalExceptionHandler.class, UsuarioPath.class})
+@ContextConfiguration(classes = {RouterRest.class, Handler.class, GlobalExceptionHandler.class, UsuarioPath.class, UsuarioMapper.class})
 @WebFluxTest
 class RouterRestTest {
 
@@ -36,7 +37,7 @@ class RouterRestTest {
 
     private WebTestClient webTestClient;
 
-    @MockBean
+    @MockitoBean
     private UsuarioUseCase usuarioUseCase;
 
     private UsuarioDTO validUsuarioDTO;

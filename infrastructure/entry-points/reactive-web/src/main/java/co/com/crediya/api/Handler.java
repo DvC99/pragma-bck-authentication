@@ -1,8 +1,7 @@
 package co.com.crediya.api;
 
 import co.com.crediya.api.dto.UsuarioDTO;
-import co.com.crediya.model.rol.Rol;
-import co.com.crediya.model.usuario.Usuario;
+import co.com.crediya.api.mapper.UsuarioMapper;
 import co.com.crediya.usecase.usuario.UsuarioUseCase;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.ConstraintViolation;
@@ -19,28 +18,15 @@ import reactor.core.publisher.Mono;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 @Tag(name = "Usuario", description = "Operaciones relacionadas con la gestión de usuarios")
+@Slf4j
 public class Handler {
 
     private final UsuarioUseCase usuarioUseCase;
     private final Validator validator;
-
-    private Usuario toModel(UsuarioDTO usuarioDTO) {
-        return Usuario.builder()
-                .id(usuarioDTO.getId())
-                .nombres(usuarioDTO.getNombres())
-                .apellidos(usuarioDTO.getApellidos())
-                .fechaNacimiento(usuarioDTO.getFechaNacimiento())
-                .email(usuarioDTO.getEmail())
-                .documentoIdentidad(usuarioDTO.getDocumentoIdentidad())
-                .telefono(usuarioDTO.getTelefono())
-                .salarioBase(usuarioDTO.getSalarioBase())
-                .rol(Rol.builder().id(usuarioDTO.getRol().getId()).build())
-                .build();
-    }
+    private final UsuarioMapper usuarioMapper;
 
     private <T> Mono<T> validate(T object) {
         Set<ConstraintViolation<T>> violations = validator.validate(object);
@@ -59,7 +45,7 @@ public class Handler {
         return serverRequest.bodyToMono(UsuarioDTO.class)
                 .doOnNext(dto -> log.debug("Request body: {}", dto))
                 .flatMap(this::validate)
-                .map(this::toModel)
+                .map(usuarioMapper::toModel)
                 .flatMap(usuarioUseCase::saveUsuario)
                 .flatMap(savedUsuario -> {
                     log.info("Successfully saved user with ID: {}", savedUsuario.getId());
@@ -75,7 +61,7 @@ public class Handler {
         return serverRequest.bodyToMono(UsuarioDTO.class)
                 .doOnNext(dto -> log.debug("Request body: {}", dto))
                 .flatMap(this::validate)
-                .map(this::toModel)
+                .map(usuarioMapper::toModel)
                 .flatMap(usuarioUseCase::updateUsuario)
                 .flatMap(savedUsuario -> {
                     log.info("Successfully updated user with ID: {}", savedUsuario.getId());
@@ -90,7 +76,7 @@ public class Handler {
         log.info("Request received for listenGetAllUsuarios");
         return ServerResponse.ok()
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(usuarioUseCase.getAllUsuarios(), Usuario.class);
+                .body(usuarioUseCase.getAllUsuarios(), co.com.crediya.model.usuario.Usuario.class);
     }
 
     public Mono<ServerResponse> listenGetUsuarioById(ServerRequest serverRequest) {
