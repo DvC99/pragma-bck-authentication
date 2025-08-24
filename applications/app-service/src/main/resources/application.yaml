@@ -25,7 +25,3 @@ routes:
     usuariosById: "/api/v1/usuarios/{id}"
 cors:
   allowed-origins: "http://localhost:4200,http://localhost:8081" # Actualizado para incluir el nuevo puerto
-springdoc:
-  api-docs:
-    path: /api-docs # Esta es la ruta por defecto, puedes personalizarla
-  packagesToScan: co.com.crediya.api # <-- CORRECTO, pero usualmente no necesario

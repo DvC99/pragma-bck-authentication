@@ -18,10 +18,12 @@ El objetivo de esta iteración fue solucionar dos problemas principales en el mi
 
 4.  **Ajuste de Pruebas:** La refactorización obligó a una corrección integral de las pruebas unitarias y de integración. Se añadió la dependencia de validación al entorno de pruebas de `reactive-web`, se eliminaron las pruebas de validación obsoletas en `usecase` y se actualizaron las pruebas de `RouterRestTest` para que utilizaran los DTOs y verificaran los nuevos mensajes de error.
 
+5.  **Diagnóstico Final de Swagger:** A pesar de todas las correcciones, la UI de Swagger seguía sin mostrar los detalles de los endpoints. Se concluyó que la causa probable era una limitación o bug en la forma en que `springdoc` procesa un único Bean de `RouterFunction` que agrupa múltiples rutas.
+
 #### Soluciones Finales Implementadas
 
 *   **Sistema de Validación:** El proyecto ahora cuenta con un sistema de validación robusto y declarativo basado en anotaciones sobre los DTOs, cumpliendo al 100% con las restricciones de la arquitectura.
-*   **Documentación de API (Swagger):** Se corrigieron las rutas y los esquemas en las anotaciones de `RouterRest.java`. La UI de Swagger ahora es precisa y describe correctamente los endpoints, incluyendo los DTOs en los cuerpos de las peticiones.
+*   **Documentación de API (Swagger):** Se refactorizó `RouterRest.java` para declarar un `@Bean` de `RouterFunction` por cada ruta individual. Cada bean fue anotado con su `@RouterOperation` correspondiente, eliminando la ambigüedad y forzando a `springdoc` a procesar la metadata correctamente.
 *   **Registro de Logs:** Se implementó logging con SLF4J en la capa de infraestructura (`Handler.java`), proporcionando visibilidad sobre las peticiones y errores sin "contaminar" las capas de dominio, tal como lo exige la arquitectura del proyecto.
 
 **Estado Final:** El proyecto se encuentra en un estado estable, con una build exitosa (`BUILD SUCCESSFUL`), todas las pruebas pasando y los requisitos iniciales completamente implementados.
@@ -67,3 +69,13 @@ Durante la implementación y prueba del microservicio, se encontraron y resolvie
 **6. Problema: Fallo al Ejecutar la Aplicación (`MainApplication`) - Contexto de Ejecución de Gradle**
 *   **Descripción:** Dificultades para ejecutar la aplicación desde la raíz de un proyecto multi-módulo.
 *   **Resolución:** Se estableció que la forma correcta de ejecutar la aplicación es usando el flag `-p` de Gradle para especificar el subproyecto: `gradlew.bat -p bck-authentication :app-service:run`.
+
+**7. Problema: Documentación Swagger Incompleta a Pesar de Anotaciones Correctas**
+*   **Descripción:** Tras implementar el patrón DTO y corregir las configuraciones básicas, la UI de Swagger mostraba los endpoints pero sin ningún detalle (parámetros, cuerpos de petición, descripciones), a pesar de que las anotaciones `@RouterOperation` eran correctas.
+*   **Causa Raíz:** La hipótesis final fue que `springdoc` presenta dificultades para procesar un único `@Bean` de `RouterFunction` que encadena múltiples rutas con el método `.andRoute()`.
+*   **Resolución:** Se refactorizó la clase `RouterRest.java` para declarar un `@Bean` de `RouterFunction` para cada ruta individual. Cada bean se anotó con su propia `@RouterOperation`, creando una asociación directa e inequívoca entre la ruta y su documentación, lo que finalmente solucionó el problema de procesamiento.
+
+**8. Problema: Error de Compilación en `RouterRest.java`**
+*   **Descripción:** Después de refactorizar `RouterRest.java` para separar los beans, se produjo un error de compilación (`cannot find symbol`) para la constante `APPLICATION_JSON_VALUE`.
+*   **Causa Raíz:** Durante el refactor se eliminó la importación estática necesaria para dicha constante.
+*   **Resolución:** Se modificó el código para utilizar el literal de texto `"application/json"` directamente en el atributo `produces` de las anotaciones, lo cual es una práctica más robusta que evita problemas de importación.
