@@ -1,0 +1,4 @@
+routes:
+  paths:
+    usuarios: "/api/v1/usuarios"
+    usuariosById: "/api/v1/usuarios/{id}"
