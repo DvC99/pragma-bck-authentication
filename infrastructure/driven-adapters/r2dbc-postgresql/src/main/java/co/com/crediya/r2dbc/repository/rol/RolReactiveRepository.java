@@ -1,4 +1,4 @@
-package co.com.crediya.r2dbc;
+package co.com.crediya.r2dbc.repository.rol;
 
 import co.com.crediya.r2dbc.entity.RolEntity;
 import org.springframework.data.repository.query.ReactiveQueryByExampleExecutor;

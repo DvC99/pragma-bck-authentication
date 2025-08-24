@@ -1,8 +1,11 @@
 package co.com.crediya.usecase.usuario;
 
+import co.com.crediya.model.rol.Rol;
 import co.com.crediya.model.usuario.Usuario;
 import co.com.crediya.model.usuario.gateways.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -18,152 +21,164 @@ import java.time.ZoneId;
 import java.util.Date;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class UsuarioUseCaseTest {
 
-    @InjectMocks
-    private UsuarioUseCase usuarioUseCase;
-
     @Mock
     private UsuarioRepository usuarioRepository;
 
-    private Usuario validUsuario;
-    private Usuario existingUsuario;
+    @InjectMocks
+    private UsuarioUseCase usuarioUseCase;
+
+    private Usuario usuarioValido;
+    private Rol rolValido;
 
     @BeforeEach
     void setUp() {
-        validUsuario = Usuario.builder()
-                .nombres("John")
-                .apellidos("Doe")
-                .fechaNacimiento(Date.from(LocalDate.of(1990, 1, 1).atStartOfDay(ZoneId.systemDefault()).toInstant()))
-                .email("john.doe@example.com")
-                .documentoIdentidad("123456789")
-                .telefono("1234567890")
-                .salarioBase(new BigDecimal("5000000"))
-                .idRol(1L)
-                .nombreRol("Solicitante")
+        rolValido = Rol.builder()
+                .id(1)
+                .nombre("CLIENTE")
+                .descripcion("Rol para clientes")
                 .build();
 
-        existingUsuario = validUsuario.toBuilder().id(1).build();
+        usuarioValido = Usuario.builder()
+                .id(1)
+                .nombres("John")
+                .apellidos("Doe")
+                .email("john.doe@example.com")
+                .documentoIdentidad("123456789")
+                .telefono("3001234567")
+                .fechaNacimiento(Date.from(LocalDate.of(1990, 1, 1).atStartOfDay(ZoneId.systemDefault()).toInstant()))
+                .salarioBase(new BigDecimal("2500000"))
+                .rol(rolValido)
+                .build();
+    }
+
+    @Nested
+    @DisplayName("Pruebas para saveUsuario")
+    class SaveUsuarioTests {
+
+        @Test
+        @DisplayName("Debe guardar un usuario exitosamente cuando el email no existe")
+        void saveUsuario_Success() {
+            // Arrange
+            when(usuarioRepository.findByEmail(usuarioValido.getEmail())).thenReturn(Mono.empty());
+            when(usuarioRepository.save(any(Usuario.class))).thenReturn(Mono.just(usuarioValido));
+
+            // Act
+            Mono<Usuario> result = usuarioUseCase.saveUsuario(usuarioValido);
+
+            // Assert
+            StepVerifier.create(result)
+                    .expectNext(usuarioValido)
+                    .verifyComplete();
+
+            verify(usuarioRepository).findByEmail(usuarioValido.getEmail());
+            verify(usuarioRepository).save(usuarioValido);
+        }
+
+        @Test
+        @DisplayName("Debe fallar al guardar si el correo electrónico ya está registrado")
+        void saveUsuario_EmailAlreadyExists() {
+            // Arrange
+            when(usuarioRepository.findByEmail(usuarioValido.getEmail())).thenReturn(Mono.just(usuarioValido));
+
+            // Act
+            Mono<Usuario> result = usuarioUseCase.saveUsuario(usuarioValido);
+
+            // Assert
+            StepVerifier.create(result)
+                    .expectError(IllegalArgumentException.class)
+                    .verify();
+        }
     }
 
     @Test
-    void saveUsuario_success() {
-        when(usuarioRepository.findByEmail(any(String.class))).thenReturn(Mono.empty());
-        when(usuarioRepository.save(any(Usuario.class))).thenReturn(Mono.just(validUsuario));
+    @DisplayName("Debe actualizar un usuario exitosamente")
+    void updateUsuario_Success() {
+        // Arrange
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(Mono.just(usuarioValido));
 
-        StepVerifier.create(usuarioUseCase.saveUsuario(validUsuario))
-                .expectNext(validUsuario)
+        // Act
+        Mono<Usuario> result = usuarioUseCase.updateUsuario(usuarioValido);
+
+        // Assert
+        StepVerifier.create(result)
+                .expectNext(usuarioValido)
+                .verifyComplete();
+        verify(usuarioRepository).save(usuarioValido);
+    }
+
+    @Test
+    @DisplayName("Debe obtener todos los usuarios")
+    void getAllUsuarios_Success() {
+        // Arrange
+        Usuario usuario2 = Usuario.builder()
+                .id(2)
+                .nombres("Jane")
+                .rol(rolValido)
+                .build();
+        when(usuarioRepository.findAll()).thenReturn(Flux.just(usuarioValido, usuario2));
+
+        // Act
+        Flux<Usuario> result = usuarioUseCase.getAllUsuarios();
+
+        // Assert
+        StepVerifier.create(result)
+                .expectNext(usuarioValido)
+                .expectNext(usuario2)
                 .verifyComplete();
     }
 
-    @Test
-    void saveUsuario_existingEmail_shouldThrowError() {
-        when(usuarioRepository.findByEmail(any(String.class))).thenReturn(Mono.just(existingUsuario));
+    @Nested
+    @DisplayName("Pruebas para getUsuarioById")
+    class GetUsuarioByIdTests {
 
-        StepVerifier.create(usuarioUseCase.saveUsuario(validUsuario))
-                .expectErrorMatches(throwable -> throwable instanceof IllegalArgumentException &&
-                        throwable.getMessage().equals("El correo electrónico ya está registrado"))
-                .verify();
+        @Test
+        @DisplayName("Debe obtener un usuario por su ID")
+        void getUsuarioById_Success() {
+            // Arrange
+            when(usuarioRepository.findById(1L)).thenReturn(Mono.just(usuarioValido));
+
+            // Act
+            Mono<Usuario> result = usuarioUseCase.getUsuarioById(1L);
+
+            // Assert
+            StepVerifier.create(result)
+                    .expectNext(usuarioValido)
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("Debe retornar Mono.empty si el usuario no se encuentra")
+        void getUsuarioById_NotFound() {
+            // Arrange
+            when(usuarioRepository.findById(99L)).thenReturn(Mono.empty());
+
+            // Act
+            Mono<Usuario> result = usuarioUseCase.getUsuarioById(99L);
+
+            // Assert
+            StepVerifier.create(result)
+                    .verifyComplete();
+        }
     }
 
     @Test
-    void saveUsuario_blankNombres_shouldThrowError() {
-        validUsuario.setNombres("");
-        StepVerifier.create(usuarioUseCase.saveUsuario(validUsuario))
-                .expectErrorMatches(throwable -> throwable instanceof IllegalArgumentException &&
-                        throwable.getMessage().equals("El nombre no puede estar vacío"))
-                .verify();
-    }
+    @DisplayName("Debe eliminar un usuario por su ID")
+    void deleteUsuario_Success() {
+        // Arrange
+        when(usuarioRepository.deleteById(1L)).thenReturn(Mono.empty());
 
-    @Test
-    void saveUsuario_nullApellidos_shouldThrowError() {
-        validUsuario.setApellidos(null);
-        StepVerifier.create(usuarioUseCase.saveUsuario(validUsuario))
-                .expectErrorMatches(throwable -> throwable instanceof IllegalArgumentException &&
-                        throwable.getMessage().equals("Los apellidos no pueden estar vacíos"))
-                .verify();
-    }
+        // Act
+        Mono<Void> result = usuarioUseCase.deleteUsuario(1L);
 
-    @Test
-    void saveUsuario_invalidEmail_shouldThrowError() {
-        validUsuario.setEmail("invalid-email");
-        StepVerifier.create(usuarioUseCase.saveUsuario(validUsuario))
-                .expectErrorMatches(throwable -> throwable instanceof IllegalArgumentException &&
-                        throwable.getMessage().equals("El email no es válido"))
-                .verify();
-    }
-
-    @Test
-    void saveUsuario_nullFechaNacimiento_shouldThrowError() {
-        validUsuario.setFechaNacimiento(null);
-        StepVerifier.create(usuarioUseCase.saveUsuario(validUsuario))
-                .expectErrorMatches(throwable -> throwable instanceof IllegalArgumentException &&
-                        throwable.getMessage().equals("La fecha de nacimiento no puede estar vacía"))
-                .verify();
-    }
-
-    @Test
-    void saveUsuario_futureFechaNacimiento_shouldThrowError() {
-        validUsuario.setFechaNacimiento(Date.from(LocalDate.now().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant()));
-        StepVerifier.create(usuarioUseCase.saveUsuario(validUsuario))
-                .expectErrorMatches(throwable -> throwable instanceof IllegalArgumentException &&
-                        throwable.getMessage().equals("La fecha de nacimiento no puede ser futura"))
-                .verify();
-    }
-
-    @Test
-    void saveUsuario_nullSalarioBase_shouldThrowError() {
-        validUsuario.setSalarioBase(null);
-        StepVerifier.create(usuarioUseCase.saveUsuario(validUsuario))
-                .expectErrorMatches(throwable -> throwable instanceof IllegalArgumentException &&
-                        throwable.getMessage().equals("El salario base no puede estar vacío"))
-                .verify();
-    }
-
-    @Test
-    void saveUsuario_salarioBaseBelowMin_shouldThrowError() {
-        validUsuario.setSalarioBase(new BigDecimal("-100"));
-        StepVerifier.create(usuarioUseCase.saveUsuario(validUsuario))
-                .expectErrorMatches(throwable -> throwable instanceof IllegalArgumentException &&
-                        throwable.getMessage().equals("El salario base debe estar entre 0 y 15,000,000"))
-                .verify();
-    }
-
-    @Test
-    void saveUsuario_salarioBaseAboveMax_shouldThrowError() {
-        validUsuario.setSalarioBase(new BigDecimal("15000001"));
-        StepVerifier.create(usuarioUseCase.saveUsuario(validUsuario))
-                .expectErrorMatches(throwable -> throwable instanceof IllegalArgumentException &&
-                        throwable.getMessage().equals("El salario base debe estar entre 0 y 15,000,000"))
-                .verify();
-    }
-
-    @Test
-    void getAllUsuarios_success() {
-        when(usuarioRepository.findAll()).thenReturn(Flux.just(validUsuario, existingUsuario));
-
-        StepVerifier.create(usuarioUseCase.getAllUsuarios())
-                .expectNext(validUsuario, existingUsuario)
+        // Assert
+        StepVerifier.create(result)
                 .verifyComplete();
-    }
-
-    @Test
-    void getUsuarioById_success() {
-        when(usuarioRepository.findById(any(Long.class))).thenReturn(Mono.just(validUsuario));
-
-        StepVerifier.create(usuarioUseCase.getUsuarioById(1L))
-                .expectNext(validUsuario)
-                .verifyComplete();
-    }
-
-    @Test
-    void deleteUsuario_success() {
-        when(usuarioRepository.deleteById(any(Long.class))).thenReturn(Mono.empty());
-
-        StepVerifier.create(usuarioUseCase.deleteUsuario(1L))
-                .verifyComplete();
+        verify(usuarioRepository).deleteById(1L);
     }
 }

@@ -16,30 +16,39 @@ import java.util.Date;
 @Setter
 @Builder
 public class UsuarioEntity {
-
     @Id
     @Column("id")
     private Integer id;
+
     private String nombres;
+
     private String apellidos;
+
     @Column("fecha_nacimiento")
     private Date fechaNacimiento;
+
     private String email;
+
     @Column("documento_identidad")
     private String documentoIdentidad;
+
     private String telefono;
-    @Column("salario_base")
+
     private BigDecimal salarioBase;
-    @Column("id_rol")
-    private Long idRol;
-    @Column("nombre_rol")
-    private String nombreRol;
+
+    @Column("id_rol") // Mantener la columna para la clave foránea
+    private Integer idRol; // Cambiar a Integer para la clave foránea
+
+    // Audit fields
     @Column("created_by")
     private String createdBy;
+
     @Column("modified_by")
     private String modifiedBy;
+
     @Column("date_created")
     private LocalDateTime dateCreated;
+
     @Column("date_modified")
     private LocalDateTime dateModified;
 }

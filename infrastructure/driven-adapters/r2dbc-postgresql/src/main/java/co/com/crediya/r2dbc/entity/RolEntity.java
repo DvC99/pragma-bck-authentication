@@ -17,14 +17,20 @@ public class RolEntity {
     @Id
     @Column("id")
     private Integer id;
+
     private String nombre;
+
     private String descripcion;
+
     @Column("created_by")
     private String createdBy;
+
     @Column("modified_by")
     private String modifiedBy;
+
     @Column("date_created")
     private LocalDateTime dateCreated;
+
     @Column("date_modified")
     private LocalDateTime dateModified;
 }

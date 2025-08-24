@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8081 # Cambiado de 8080 a 8081
 spring:
   application:
     name: "bck-aunthentication"
@@ -24,4 +24,8 @@ routes:
     usuarios: "/api/v1/usuarios"
     usuariosById: "/api/v1/usuarios/{id}"
 cors:
-  allowed-origins: "http://localhost:4200,http://localhost:8080"
+  allowed-origins: "http://localhost:4200,http://localhost:8081" # Actualizado para incluir el nuevo puerto
+springdoc:
+  api-docs:
+    path: /api-docs # Esta es la ruta por defecto, puedes personalizarla
+  packagesToScan: co.com.crediya.api # <-- CORRECTO, pero usualmente no necesario

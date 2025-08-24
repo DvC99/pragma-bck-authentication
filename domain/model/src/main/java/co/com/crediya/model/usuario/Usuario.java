@@ -1,5 +1,6 @@
 package co.com.crediya.model.usuario;
 
+import co.com.crediya.model.rol.Rol;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -30,9 +31,7 @@ public class Usuario {
 
     private BigDecimal salarioBase;
 
-    private Long idRol;
-
-    private String nombreRol;
+    private Rol rol; // Nuevo campo de tipo Rol
 
     // Datos de auditoría
     private String createdBy;

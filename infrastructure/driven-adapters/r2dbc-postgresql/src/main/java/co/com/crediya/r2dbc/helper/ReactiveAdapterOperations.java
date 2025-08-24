@@ -38,7 +38,7 @@ public abstract class ReactiveAdapterOperations<E, D, I, R extends ReactiveCrudR
                 .map(this::toEntity);
     }
 
-    protected Flux<E> saveAllEntities(Flux<E> entities) {
+    public Flux<E> saveAllEntities(Flux<E> entities) {
         return saveData(entities.map(this::toData))
                 .map(this::toEntity);
     }

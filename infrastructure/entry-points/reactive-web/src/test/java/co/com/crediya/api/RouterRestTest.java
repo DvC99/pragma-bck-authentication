@@ -1,14 +1,18 @@
 package co.com.crediya.api;
 
 import co.com.crediya.api.config.UsuarioPath;
+import co.com.crediya.api.dto.RolDTO;
+import co.com.crediya.api.dto.UsuarioDTO;
+import co.com.crediya.api.handler.GlobalExceptionHandler;
+import co.com.crediya.model.rol.Rol;
 import co.com.crediya.model.usuario.Usuario;
 import co.com.crediya.usecase.usuario.UsuarioUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -23,23 +27,37 @@ import java.util.Date;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import co.com.crediya.api.handler.GlobalExceptionHandler;
-
+@ContextConfiguration(classes = {RouterRest.class, Handler.class, GlobalExceptionHandler.class, UsuarioPath.class})
 @WebFluxTest
-@ContextConfiguration(classes = {RouterRest.class, Handler.class, GlobalExceptionHandler.class})
-@EnableConfigurationProperties(UsuarioPath.class)
 class RouterRestTest {
 
     @Autowired
+    private ApplicationContext context;
+
     private WebTestClient webTestClient;
 
     @MockBean
     private UsuarioUseCase usuarioUseCase;
 
+    private UsuarioDTO validUsuarioDTO;
     private Usuario validUsuario;
 
     @BeforeEach
     void setUp() {
+        webTestClient = WebTestClient.bindToApplicationContext(context).build();
+
+        RolDTO rolDTO = RolDTO.builder().id(1).build();
+        validUsuarioDTO = UsuarioDTO.builder()
+                .nombres("Jane")
+                .apellidos("Doe")
+                .fechaNacimiento(Date.from(LocalDate.of(1995, 5, 10).atStartOfDay(ZoneId.systemDefault()).toInstant()))
+                .email("jane.doe@example.com")
+                .documentoIdentidad("987654321")
+                .telefono("0987654321")
+                .salarioBase(new BigDecimal("6000000"))
+                .rol(rolDTO)
+                .build();
+
         validUsuario = Usuario.builder()
                 .nombres("Jane")
                 .apellidos("Doe")
@@ -48,8 +66,7 @@ class RouterRestTest {
                 .documentoIdentidad("987654321")
                 .telefono("0987654321")
                 .salarioBase(new BigDecimal("6000000"))
-                .idRol(1L)
-                .nombreRol("Solicitante")
+                .rol(Rol.builder().id(1).build())
                 .build();
     }
 
@@ -60,7 +77,7 @@ class RouterRestTest {
         webTestClient.post()
                 .uri("/api/v1/usuarios")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(validUsuario)
+                .bodyValue(validUsuarioDTO)
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(Usuario.class)
@@ -69,34 +86,30 @@ class RouterRestTest {
 
     @Test
     void shouldReturnBadRequestForBlankNombres() {
-        validUsuario.setNombres("");
-        when(usuarioUseCase.saveUsuario(any(Usuario.class)))
-                .thenReturn(Mono.error(new IllegalArgumentException("El nombre no puede estar vacío")));
+        validUsuarioDTO.setNombres("");
 
         webTestClient.post()
                 .uri("/api/v1/usuarios")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(validUsuario)
+                .bodyValue(validUsuarioDTO)
                 .exchange()
                 .expectStatus().isBadRequest()
                 .expectBody()
-                .jsonPath("$.error").isEqualTo("El nombre no puede estar vacío");
+                .jsonPath("$.nombres").isEqualTo("El nombre no puede estar vacío");
     }
 
     @Test
     void shouldReturnBadRequestForInvalidEmail() {
-        validUsuario.setEmail("invalid-email");
-        when(usuarioUseCase.saveUsuario(any(Usuario.class)))
-                .thenReturn(Mono.error(new IllegalArgumentException("El email no es válido")));
+        validUsuarioDTO.setEmail("invalid-email");
 
         webTestClient.post()
                 .uri("/api/v1/usuarios")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(validUsuario)
+                .bodyValue(validUsuarioDTO)
                 .exchange()
                 .expectStatus().isBadRequest()
                 .expectBody()
-                .jsonPath("$.error").isEqualTo("El email no es válido");
+                .jsonPath("$.email").isEqualTo("El email no es válido");
     }
 
     @Test
@@ -107,7 +120,7 @@ class RouterRestTest {
         webTestClient.post()
                 .uri("/api/v1/usuarios")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(validUsuario)
+                .bodyValue(validUsuarioDTO)
                 .exchange()
                 .expectStatus().isBadRequest()
                 .expectBody()
@@ -116,56 +129,76 @@ class RouterRestTest {
 
     @Test
     void shouldReturnBadRequestForSalarioBaseOutOfRange() {
-        validUsuario.setSalarioBase(new BigDecimal("20000000")); // Above max
-        when(usuarioUseCase.saveUsuario(any(Usuario.class)))
-                .thenReturn(Mono.error(new IllegalArgumentException("El salario base debe estar entre 0 y 15,000,000")));
+        validUsuarioDTO.setSalarioBase(new BigDecimal("20000000")); // Above max
 
         webTestClient.post()
                 .uri("/api/v1/usuarios")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(validUsuario)
+                .bodyValue(validUsuarioDTO)
                 .exchange()
                 .expectStatus().isBadRequest()
                 .expectBody()
-                .jsonPath("$.error").isEqualTo("El salario base debe estar entre 0 y 15,000,000");
+                .jsonPath("$.salarioBase").isEqualTo("El salario base debe ser como máximo 15,000,000");
     }
 
     @Test
     void shouldReturnBadRequestForFutureFechaNacimiento() {
-        validUsuario.setFechaNacimiento(Date.from(LocalDate.now().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant()));
-        when(usuarioUseCase.saveUsuario(any(Usuario.class)))
-                .thenReturn(Mono.error(new IllegalArgumentException("La fecha de nacimiento no puede ser futura")));
+        validUsuarioDTO.setFechaNacimiento(Date.from(LocalDate.now().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant()));
 
         webTestClient.post()
                 .uri("/api/v1/usuarios")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(validUsuario)
+                .bodyValue(validUsuarioDTO)
                 .exchange()
                 .expectStatus().isBadRequest()
                 .expectBody()
-                .jsonPath("$.error").isEqualTo("La fecha de nacimiento no puede ser futura");
+                .jsonPath("$.fechaNacimiento").isEqualTo("La fecha de nacimiento no puede ser futura");
     }
 
-    // Add tests for other CRUD operations if needed, following the pattern
+    @Test
+    void shouldReturnBadRequestForNullRol() {
+        validUsuarioDTO.setRol(null);
+
+        webTestClient.post()
+                .uri("/api/v1/usuarios")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(validUsuarioDTO)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.rol").isEqualTo("El rol del usuario no puede ser nulo");
+    }
+
+    @Test
+    void shouldReturnBadRequestForNullRolId() {
+        validUsuarioDTO.setRol(RolDTO.builder().id(null).build());
+
+        webTestClient.post()
+                .uri("/api/v1/usuarios")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(validUsuarioDTO)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.['rol.id']").isEqualTo("El ID del rol no puede ser nulo");
+    }
+
     @Test
     void shouldGetAllUsuarios() {
-        Usuario anotherUser = validUsuario.toBuilder().email("another@example.com").build();
-        when(usuarioUseCase.getAllUsuarios()).thenReturn(Flux.just(validUsuario, anotherUser));
+        when(usuarioUseCase.getAllUsuarios()).thenReturn(Flux.just(validUsuario));
 
         webTestClient.get()
                 .uri("/api/v1/usuarios")
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()
-                .expectBodyList(Usuario.class)
-                .hasSize(2)
-                .contains(validUsuario, anotherUser);
+                .expectBodyList(Usuario.class).hasSize(1).contains(validUsuario);
     }
 
     @Test
     void shouldGetUsuarioById() {
         validUsuario.setId(1);
-        when(usuarioUseCase.getUsuarioById(any(Long.class))).thenReturn(Mono.just(validUsuario));
+        when(usuarioUseCase.getUsuarioById(1L)).thenReturn(Mono.just(validUsuario));
 
         webTestClient.get()
                 .uri("/api/v1/usuarios/1")
@@ -178,22 +211,21 @@ class RouterRestTest {
 
     @Test
     void shouldUpdateUsuario() {
-        Usuario updatedUsuario = validUsuario.toBuilder().id(1).nombres("Jane Updated").build();
-        when(usuarioUseCase.updateUsuario(any(Usuario.class))).thenReturn(Mono.just(updatedUsuario));
+        when(usuarioUseCase.updateUsuario(any(Usuario.class))).thenReturn(Mono.just(validUsuario));
 
         webTestClient.put()
                 .uri("/api/v1/usuarios")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(updatedUsuario)
+                .bodyValue(validUsuarioDTO)
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(Usuario.class)
-                .isEqualTo(updatedUsuario);
+                .isEqualTo(validUsuario);
     }
 
     @Test
     void shouldDeleteUsuario() {
-        when(usuarioUseCase.deleteUsuario(any(Long.class))).thenReturn(Mono.empty());
+        when(usuarioUseCase.deleteUsuario(1L)).thenReturn(Mono.empty());
 
         webTestClient.delete()
                 .uri("/api/v1/usuarios/1")
