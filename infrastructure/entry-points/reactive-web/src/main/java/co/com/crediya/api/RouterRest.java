@@ -18,18 +18,15 @@ import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.web.reactive.function.server.RequestPredicates.accept;
-import static org.springframework.web.reactive.function.server.RequestPredicates.DELETE;
-import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
-import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
-import static org.springframework.web.reactive.function.server.RequestPredicates.PUT;
+import static org.springframework.web.reactive.function.server.RequestPredicates.*;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 
 @Configuration
 public class RouterRest {
+    private static final String BASE_URL = "/api/v1/usuarios";
 
     @Bean
-    @RouterOperation(path = "/api/v1/usuarios", produces = {
+    @RouterOperation(path = BASE_URL, produces = {
             "application/json"}, method = RequestMethod.POST, beanClass = Handler.class, beanMethod = "listenSaveUsuario",
             operation = @Operation(operationId = "listenSaveUsuario", tags = "Usuario",
                     summary = "Guardar un nuevo usuario",
@@ -41,11 +38,11 @@ public class RouterRest {
                     }
             ))
     public RouterFunction<ServerResponse> saveUsuarioRoute(Handler handler) {
-        return route(POST("/api/v1/usuarios").and(accept(APPLICATION_JSON)), handler::listenSaveUsuario);
+        return route(POST(BASE_URL).and(accept(APPLICATION_JSON)), handler::listenSaveUsuario);
     }
 
     @Bean
-    @RouterOperation(path = "/api/v1/usuarios", produces = {
+    @RouterOperation(path = BASE_URL, produces = {
             "application/json"}, method = RequestMethod.PUT, beanClass = Handler.class, beanMethod = "listenUpdateUsuario",
             operation = @Operation(operationId = "listenUpdateUsuario", tags = "Usuario",
                     summary = "Actualizar un usuario existente",
@@ -57,11 +54,11 @@ public class RouterRest {
                     }
             ))
     public RouterFunction<ServerResponse> updateUsuarioRoute(Handler handler) {
-        return route(PUT("/api/v1/usuarios").and(accept(APPLICATION_JSON)), handler::listenUpdateUsuario);
+        return route(PUT(BASE_URL).and(accept(APPLICATION_JSON)), handler::listenUpdateUsuario);
     }
 
     @Bean
-    @RouterOperation(path = "/api/v1/usuarios/{id}", produces = {
+    @RouterOperation(path = BASE_URL+"/{id}", produces = {
             "application/json"}, method = RequestMethod.GET, beanClass = Handler.class, beanMethod = "listenGetUsuarioById",
             operation = @Operation(operationId = "listenGetUsuarioById", tags = "Usuario",
                     summary = "Obtener un usuario por ID",
@@ -75,11 +72,11 @@ public class RouterRest {
                     }
             ))
     public RouterFunction<ServerResponse> getUsuarioByIdRoute(Handler handler) {
-        return route(GET("/api/v1/usuarios/{id}"), handler::listenGetUsuarioById);
+        return route(GET(BASE_URL+"/{id}"), handler::listenGetUsuarioById);
     }
 
     @Bean
-    @RouterOperation(path = "/api/v1/usuarios", produces = {
+    @RouterOperation(path = BASE_URL, produces = {
             "application/json"}, method = RequestMethod.GET, beanClass = Handler.class, beanMethod = "listenGetAllUsuarios",
             operation = @Operation(operationId = "listenGetAllUsuarios", tags = "Usuario",
                     summary = "Obtener todos los usuarios",
@@ -89,11 +86,11 @@ public class RouterRest {
                     }
             ))
     public RouterFunction<ServerResponse> getAllUsuariosRoute(Handler handler) {
-        return route(GET("/api/v1/usuarios"), handler::listenGetAllUsuarios);
+        return route(GET(BASE_URL), handler::listenGetAllUsuarios);
     }
 
     @Bean
-    @RouterOperation(path = "/api/v1/usuarios/{id}", produces = {
+    @RouterOperation(path = BASE_URL+"/{id}", produces = {
             "application/json"}, method = RequestMethod.DELETE, beanClass = Handler.class, beanMethod = "listenDeleteUsuario",
             operation = @Operation(operationId = "listenDeleteUsuario", tags = "Usuario",
                     summary = "Eliminar un usuario por ID",
@@ -107,6 +104,6 @@ public class RouterRest {
                     }
             ))
     public RouterFunction<ServerResponse> deleteUsuarioRoute(Handler handler) {
-        return route(DELETE("/api/v1/usuarios/{id}"), handler::listenDeleteUsuario);
+        return route(DELETE(BASE_URL+"/{id}"), handler::listenDeleteUsuario);
     }
 }

@@ -18,12 +18,11 @@ import reactor.core.publisher.Mono;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 @Tag(name = "Usuario", description = "Operaciones relacionadas con la gestión de usuarios")
-@Slf4j
 public class Handler {
-
     private final UsuarioUseCase usuarioUseCase;
     private final Validator validator;
     private final UsuarioMapper usuarioMapper;
