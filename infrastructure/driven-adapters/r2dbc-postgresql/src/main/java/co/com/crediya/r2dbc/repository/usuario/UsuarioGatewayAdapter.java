@@ -1,9 +1,9 @@
 package co.com.crediya.r2dbc.repository.usuario;
 
 import co.com.crediya.model.exceptions.RepositoryException;
-import co.com.crediya.model.rol.gateways.RolRepository;
+import co.com.crediya.model.rol.gateways.RolGateway;
 import co.com.crediya.model.usuario.Usuario;
-import co.com.crediya.model.usuario.gateways.UsuarioRepository;
+import co.com.crediya.model.usuario.gateways.UsuarioGateway;
 import co.com.crediya.r2dbc.entity.UsuarioEntity;
 import co.com.crediya.r2dbc.helper.ReactiveAdapterOperations;
 import org.reactivecommons.utils.ObjectMapper;
@@ -17,21 +17,21 @@ import reactor.core.publisher.Mono;
  * Adapter for the repository of usuarios.
  */
 @Repository
-public class UsuarioRepositoryAdapter extends ReactiveAdapterOperations<Usuario, UsuarioEntity, Integer, UsuarioReactiveRepository> implements UsuarioRepository {
+public class UsuarioGatewayAdapter extends ReactiveAdapterOperations<Usuario, UsuarioEntity, Integer, UsuarioReactiveRepository> implements UsuarioGateway {
 
-    private final RolRepository rolRepository;
+    private final RolGateway rolGateway;
 
     /**
      * Constructor for the UsuarioRepositoryAdapter.
      *
      * @param repository    the reactive repository
      * @param mapper        the object mapper
-     * @param rolRepository the rol repository
+     * @param rolGateway the rol repository
      */
     @Autowired
-    public UsuarioRepositoryAdapter(UsuarioReactiveRepository repository, ObjectMapper mapper, RolRepository rolRepository) {
+    public UsuarioGatewayAdapter(UsuarioReactiveRepository repository, ObjectMapper mapper, RolGateway rolGateway) {
         super(repository, mapper, data -> mapper.map(data, Usuario.class)); // toEntityFn ahora solo mapea la entidad base
-        this.rolRepository = rolRepository;
+        this.rolGateway = rolGateway;
     }
 
     @Override
@@ -88,7 +88,7 @@ public class UsuarioRepositoryAdapter extends ReactiveAdapterOperations<Usuario,
 
     private Mono<Usuario> loadRolForUsuario(Usuario usuario) {
         if (usuario.getRol() != null && usuario.getRol().getId() != null) {
-            return rolRepository.findById(usuario.getRol().getId().longValue())
+            return rolGateway.findById(usuario.getRol().getId().longValue())
                     .map(rol -> {
                         usuario.setRol(rol);
                         return usuario;

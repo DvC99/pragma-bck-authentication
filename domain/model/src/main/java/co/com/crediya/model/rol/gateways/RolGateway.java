@@ -7,7 +7,7 @@ import reactor.core.publisher.Mono;
 /**
  * Interface for the repository of roles.
  */
-public interface RolRepository {
+public interface RolGateway {
     /**
      * Saves a rol.
      *

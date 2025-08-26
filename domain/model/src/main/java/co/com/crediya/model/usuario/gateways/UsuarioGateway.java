@@ -7,7 +7,7 @@ import reactor.core.publisher.Mono;
 /**
  * Interface for the repository of usuarios.
  */
-public interface UsuarioRepository {
+public interface UsuarioGateway {
     /**
      * Saves a usuario.
      *

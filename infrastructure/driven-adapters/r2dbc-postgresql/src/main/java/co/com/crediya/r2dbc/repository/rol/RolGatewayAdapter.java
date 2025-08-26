@@ -1,7 +1,7 @@
 package co.com.crediya.r2dbc.repository.rol;
 
 import co.com.crediya.model.rol.Rol;
-import co.com.crediya.model.rol.gateways.RolRepository;
+import co.com.crediya.model.rol.gateways.RolGateway;
 import co.com.crediya.r2dbc.entity.RolEntity;
 import co.com.crediya.r2dbc.helper.ReactiveAdapterOperations;
 import org.reactivecommons.utils.ObjectMapper;
@@ -14,7 +14,7 @@ import reactor.core.publisher.Mono;
  * Adapter for the repository of roles.
  */
 @Repository
-public class RolRepositoryAdapter extends ReactiveAdapterOperations<Rol, RolEntity, Integer, RolReactiveRepository > implements RolRepository {
+public class RolGatewayAdapter extends ReactiveAdapterOperations<Rol, RolEntity, Integer, RolReactiveRepository > implements RolGateway {
 
     /**
      * Constructor for the RolRepositoryAdapter.
@@ -23,7 +23,7 @@ public class RolRepositoryAdapter extends ReactiveAdapterOperations<Rol, RolEnti
      * @param mapper     the object mapper
      */
     @Autowired
-    public RolRepositoryAdapter(RolReactiveRepository repository, ObjectMapper mapper) {
+    public RolGatewayAdapter(RolReactiveRepository repository, ObjectMapper mapper) {
         super(repository, mapper, entity -> mapper.map(entity, Rol.class));
     }
 
