@@ -10,9 +10,18 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+/**
+ * Adapter for the repository of roles.
+ */
 @Repository
 public class RolRepositoryAdapter extends ReactiveAdapterOperations<Rol, RolEntity, Integer, RolReactiveRepository > implements RolRepository {
 
+    /**
+     * Constructor for the RolRepositoryAdapter.
+     *
+     * @param repository the reactive repository
+     * @param mapper     the object mapper
+     */
     @Autowired
     public RolRepositoryAdapter(RolReactiveRepository repository, ObjectMapper mapper) {
         super(repository, mapper, entity -> mapper.map(entity, Rol.class));
