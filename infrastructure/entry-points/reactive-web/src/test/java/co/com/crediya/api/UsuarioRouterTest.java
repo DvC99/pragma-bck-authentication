@@ -23,6 +23,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.transaction.reactive.TransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -52,6 +53,9 @@ class UsuarioRouterTest {
     @MockitoBean
     private UsuarioUseCase usuarioUseCase;
 
+    @MockitoBean
+    private TransactionalOperator transactionalOperator;
+
     private UsuarioDTO validUsuarioDTO;
     private Usuario validUsuario;
 
@@ -68,6 +72,7 @@ class UsuarioRouterTest {
                 "jane.doe@example.com",
                 "987654321",
                 "3109876543",
+                "Calle Falsa 123",
                 new BigDecimal("6000000"),
                 rolDTO
         );
@@ -80,9 +85,12 @@ class UsuarioRouterTest {
                 .email("jane.doe@example.com")
                 .documentoIdentidad("987654321")
                 .telefono("3109876543")
+                .direccion("Calle Falsa 123")
                 .salarioBase(new BigDecimal("6000000"))
                 .rol(Rol.builder().id(1).nombre("CLIENTE").descripcion("Rol para clientes").build())
                 .build();
+
+        when(transactionalOperator.transactional(any(Mono.class))).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Nested
@@ -112,7 +120,7 @@ class UsuarioRouterTest {
         @DisplayName("Debe devolver 400 por nombre inválido")
         void shouldReturnBadRequestForInvalidNombres() {
             // Arrange
-            UsuarioDTO invalidDto = new UsuarioDTO(null, "Jane123", "Doe", validUsuarioDTO.fechaNacimiento(), validUsuarioDTO.email(), validUsuarioDTO.documentoIdentidad(), validUsuarioDTO.telefono(), validUsuarioDTO.salarioBase(), validUsuarioDTO.rol());
+            UsuarioDTO invalidDto = new UsuarioDTO(null, "Jane123", "Doe", validUsuarioDTO.fechaNacimiento(), validUsuarioDTO.email(), validUsuarioDTO.documentoIdentidad(), validUsuarioDTO.telefono(), "Calle Falsa 123", validUsuarioDTO.salarioBase(), validUsuarioDTO.rol());
 
             // Act & Assert
             webTestClient.post()
@@ -220,7 +228,10 @@ class UsuarioRouterTest {
                     .uri("/api/v1/usuarios/99")
                     .accept(MediaType.APPLICATION_JSON)
                     .exchange()
-                    .expectStatus().isNotFound();
+                    .expectStatus().isNotFound()
+                    .expectBody()
+                    .jsonPath("$.codigo").isEqualTo(404)
+                    .jsonPath("$.mensaje").isEqualTo("No se encontraron datos para el ID proporcionado: 99");
         }
     }
 

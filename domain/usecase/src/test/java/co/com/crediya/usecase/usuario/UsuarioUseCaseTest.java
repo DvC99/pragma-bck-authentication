@@ -52,6 +52,7 @@ class UsuarioUseCaseTest {
                 .email("john.doe@example.com")
                 .documentoIdentidad("123456789")
                 .telefono("3001234567")
+                .direccion("Calle Falsa 123")
                 .fechaNacimiento(Date.from(LocalDate.of(1990, 1, 1).atStartOfDay(ZoneId.systemDefault()).toInstant()))
                 .salarioBase(new BigDecimal("2500000"))
                 .rol(rolValido)

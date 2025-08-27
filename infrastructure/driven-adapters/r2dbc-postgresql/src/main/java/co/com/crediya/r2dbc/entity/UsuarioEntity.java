@@ -34,6 +34,8 @@ public class UsuarioEntity {
 
     private String telefono;
 
+    private String direccion;
+
     private BigDecimal salarioBase;
 
     @Column("id_rol") // Mantener la columna para la clave foránea
