@@ -129,3 +129,25 @@ Esta iteración se centró en expandir las reglas de negocio y solidificar los c
     *   Se analizó y documentó la relación entre los patrones **Gateway** y **Repository** en el proyecto.
     *   Se concluyó que el proyecto utiliza correctamente el Patrón Repository como una especialización del Patrón Gateway, donde la interfaz `UsuarioRepository` actúa como el puerto del dominio.
     *   Se reafirmó el flujo correcto de dependencias: `Adaptador Driving (Handler)` -> `Caso de Uso` -> `Interfaz Gateway (Repository)` <- `Adaptador Driven (Implementación del Repository)`, clarificando que un adaptador driven (como un repositorio) nunca debe invocar a un caso de uso.
+
+---
+
+### Iteración 4: Robustez, Nuevos Campos y Adherencia Arquitectónica
+
+Esta iteración se enfocó en completar los requisitos funcionales, mejorar la robustez de las operaciones de base de datos y la experiencia del cliente de la API, y corregir desviaciones arquitectónicas.
+
+#### Resumen de Mejoras Implementadas
+
+1.  **Ampliación del Modelo de Dominio:**
+    *   Se añadió el campo `direccion` al `Usuario`, propagando el cambio a través de todas las capas relevantes: DTO (`UsuarioDTO`), modelo de dominio (`Usuario`), entidad de persistencia (`UsuarioEntity`) y el mapper correspondiente.
+    *   Se incluyó la validación `@NotBlank` para el nuevo campo en el DTO.
+
+2.  **Manejo de Respuestas Nulas:**
+    *   Se mejoró la respuesta de la API para las consultas que no arrojan resultados. Específicamente, al buscar un usuario por un ID que no existe, la API ahora devuelve un código de estado `404 Not Found` junto con un cuerpo de respuesta JSON estandarizado (`ApiResponse`) que informa claramente la ausencia de datos, en lugar de una respuesta vacía.
+
+3.  **Implementación de Transaccionalidad Reactiva:**
+    *   Se implementó la gestión de transacciones explícitas para las operaciones de creación y actualización de usuarios para garantizar la atomicidad.
+    *   **Corrección Arquitectónica:** Siguiendo estrictamente los principios de la Arquitectura Limpia, la responsabilidad transaccional se ubicó en la capa de infraestructura (`UsuarioHandler`) mediante el uso de `TransactionalOperator`. Se revirtió un intento inicial de colocar esta lógica en el `UsuarioUseCase` para mantener el dominio libre de dependencias de frameworks.
+    *   Se habilitó la gestión de transacciones reactivas en la configuración de la aplicación (`@EnableTransactionManagement`) y se resolvieron las dependencias de compilación añadiendo `spring-tx` a los módulos `reactive-web` y `app-service`.
+
+**Estado Final de la Iteración:** El proyecto ahora cumple con todos los requisitos funcionales solicitados, presenta una API más descriptiva y robusta, y asegura la atomicidad en las operaciones de escritura, todo mientras se adhiere rigurosamente a los principios de la Arquitectura Limpia.
