@@ -9,13 +9,30 @@ import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
 
+/**
+ * Configuration for the PostgreSQL connection pool.
+ */
 @Configuration
 public class PostgreSQLConnectionPool {
-    /* Change these values for your project */
+    /**
+     * The initial size of the connection pool.
+     */
     public static final int INITIAL_SIZE = 12;
+    /**
+     * The max size of the connection pool.
+     */
     public static final int MAX_SIZE = 15;
+    /**
+     * The max idle time of the connection pool.
+     */
     public static final int MAX_IDLE_TIME = 30;
 
+	/**
+	 * Creates a connection pool bean.
+	 *
+	 * @param properties the PostgreSQL connection properties
+	 * @return the connection pool bean
+	 */
 	@Bean
 	public ConnectionPool getConnectionConfig(PostgresqlConnectionProperties properties) {
 		PostgresqlConnectionConfiguration dbConfiguration = PostgresqlConnectionConfiguration.builder()

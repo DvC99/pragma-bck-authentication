@@ -1,6 +1,6 @@
 package co.com.crediya.config;
 
-import co.com.crediya.model.usuario.gateways.UsuarioRepository;
+import co.com.crediya.model.usuario.gateways.UsuarioGateway;
 import co.com.crediya.usecase.usuario.UsuarioUseCase;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -24,8 +24,8 @@ class UseCasesConfigTest {
     @Import(UseCasesConfig.class)
     static class TestConfig {
         @Bean
-        public UsuarioRepository usuarioRepository() {
-            return Mockito.mock(UsuarioRepository.class);
+        public UsuarioGateway usuarioRepository() {
+            return Mockito.mock(UsuarioGateway.class);
         }
     }
 }

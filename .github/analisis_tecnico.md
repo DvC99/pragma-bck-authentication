@@ -79,3 +79,53 @@ Durante la implementación y prueba del microservicio, se encontraron y resolvie
 *   **Descripción:** Después de refactorizar `RouterRest.java` para separar los beans, se produjo un error de compilación (`cannot find symbol`) para la constante `APPLICATION_JSON_VALUE`.
 *   **Causa Raíz:** Durante el refactor se eliminó la importación estática necesaria para dicha constante.
 *   **Resolución:** Se modificó el código para utilizar el literal de texto `"application/json"` directamente en el atributo `produces` de las anotaciones, lo cual es una práctica más robusta que evita problemas de importación.
+
+---
+
+### Refactorización Avanzada y Estrategia de Errores (Iteración 2)
+
+En esta segunda iteración, el enfoque fue robustecer la arquitectura, mejorar la manenibilidad y estandarizar la comunicación de la API.
+
+#### Resumen de Mejoras Implementadas
+
+1.  **Centralización de la Validación:** Se extrajo la lógica de validación de los DTOs a un componente genérico y reutilizable (`RequestValidator`), eliminando la duplicación de código en los Handlers y centralizando esta responsabilidad de la capa de infraestructura.
+
+2.  **Modernización de DTOs a Records:** Las clases `UsuarioDTO` y `RolDTO` fueron refactorizadas para usar `records` de Java. Este cambio reduce significativamente el código boilerplate (generado por Lombok) y garantiza la inmutabilidad de los objetos de transferencia, alineándose con las prácticas modernas de Java.
+
+3.  **Estandarización de la Respuesta de la API:** Se implementó una estructura de respuesta JSON genérica (`ApiResponse<T>`) con los campos `codigo`, `mensaje` y `body`. Todos los endpoints y manejadores de errores fueron actualizados para usar este formato, asegurando una comunicación predecible y consistente con los clientes de la API.
+
+4.  **Modularización de Entry Points:** Para facilitar la escalabilidad y la adición de nuevas entidades en el futuro, se renombraron las clases `Handler` y `RouterRest` a `UsuarioHandler` y `UsuarioRouter` respectivamente, estableciendo un patrón de un handler/router por entidad.
+
+5.  **Segregación de Errores por Capa Arquitectónica:** Se implementó una estrategia de manejo de excepciones híbrida para segregar los errores según su capa de origen:
+    *   **Excepciones de Dominio:** Se creó una clase base `DomainException` y excepciones específicas como `EmailAlreadyExistsException`. Los casos de uso ahora lanzan estos errores de negocio descriptivos, permitiendo al `GlobalExceptionHandler` mapearlos a códigos de estado HTTP precisos (ej. `409 Conflict`).
+    *   **Excepciones de Infraestructura:** Se introdujo una `InfrastructureException` y una `RepositoryException`. Los adaptadores de base de datos ahora encapsulan las excepciones de bajo nivel (como `DataAccessException`) en estas excepciones personalizadas. Esto cumple con el principio de la Arquitectura Limpia de no filtrar detalles de la infraestructura hacia las capas internas.
+    *   **Manejo Centralizado:** El `GlobalExceptionHandler` fue mejorado para identificar el tipo de excepción (Validación, Dominio, Infraestructura) y devolver la `ApiResponse` con el código HTTP (400, 409, 500) y el mensaje adecuado para cada caso.
+
+6.  **Documentación Exhaustiva (Javadoc):** Se añadió documentación Javadoc completa a todas las clases modificadas y nuevas, mejorando la claridad del código y facilitando su mantenimiento futuro.
+
+**Estado Final de la Iteración:** El proyecto cuenta ahora con una base de código más robusta, mantenible y escalable. La estandarización de respuestas y el manejo de errores por capas fortalecen la API, haciéndola más predecible y fácil de consumir.
+
+---
+
+### Iteración 3: Lógica de Negocio Adicional y Claridad Arquitectónica
+
+Esta iteración se centró en expandir las reglas de negocio y solidificar los conceptos arquitectónicos del proyecto.
+
+#### Resumen de Mejoras Implementadas
+
+1.  **Validación de Unicidad Extendida:** Se implementó una nueva regla de negocio crítica: tanto el `email` como el `documentoIdentidad` deben ser únicos para cada usuario.
+    *   La lógica se añadió en el `UsuarioUseCase` para los métodos `saveUsuario` y `updateUsuario`.
+    *   La validación para la actualización (`updateUsuario`) se implementó cuidadosamente para asegurar que un campo no sea reportado como duplicado si pertenece al mismo usuario que se está modificando.
+
+2.  **Ampliación de la Capa de Dominio:**
+    *   Para soportar la nueva regla, se extendió el gateway `UsuarioRepository` con un nuevo método: `findByDocumentoIdentidad`.
+    *   Se implementó el método correspondiente en el `UsuarioRepositoryAdapter` y en la capa de persistencia de Spring Data.
+
+3.  **Manejo de Errores Más Específico:**
+    *   Se creó una nueva excepción de dominio, `DocumentoIdentidadAlreadyExistsException`, para comunicar de forma precisa la violación de esta nueva regla de negocio.
+    *   El `GlobalExceptionHandler` se actualizó para manejar esta excepción de forma dedicada, devolviendo un código de estado `409 Conflict`, lo que proporciona una retroalimentación mucho más clara al cliente de la API.
+
+4.  **Análisis y Clarificación de Patrones Arquitectónicos:**
+    *   Se analizó y documentó la relación entre los patrones **Gateway** y **Repository** en el proyecto.
+    *   Se concluyó que el proyecto utiliza correctamente el Patrón Repository como una especialización del Patrón Gateway, donde la interfaz `UsuarioRepository` actúa como el puerto del dominio.
+    *   Se reafirmó el flujo correcto de dependencias: `Adaptador Driving (Handler)` -> `Caso de Uso` -> `Interfaz Gateway (Repository)` <- `Adaptador Driven (Implementación del Repository)`, clarificando que un adaptador driven (como un repositorio) nunca debe invocar a un caso de uso.
