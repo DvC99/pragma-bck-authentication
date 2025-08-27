@@ -17,6 +17,7 @@ import java.util.Date;
  * @param email              the user's email address
  * @param documentoIdentidad the user's identity document number
  * @param telefono           the user's phone number
+ * @param direccion          the user's address
  * @param salarioBase        the user's base salary
  * @param rol                the user's role
  */
@@ -46,6 +47,9 @@ public record UsuarioDTO(
         @NotBlank(message = "El teléfono no puede estar vacío")
         @Pattern(regexp = "^[0-9]{7,15}$", message = "El teléfono debe contener solo números y tener entre 7 y 15 dígitos")
         String telefono,
+
+        @NotBlank(message = "La dirección no puede estar vacía")
+        String direccion,
 
         @NotNull(message = "El salario base no puede estar vacío")
         @DecimalMin(value = "0", message = "El salario base debe ser como mínimo 0")

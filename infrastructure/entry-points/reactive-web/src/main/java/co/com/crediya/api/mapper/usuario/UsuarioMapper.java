@@ -30,6 +30,7 @@ public class UsuarioMapper {
                 .email(usuarioDTO.email())
                 .documentoIdentidad(usuarioDTO.documentoIdentidad())
                 .telefono(usuarioDTO.telefono())
+                .direccion(usuarioDTO.direccion())
                 .salarioBase(usuarioDTO.salarioBase())
                 .rol(toModel(usuarioDTO.rol()))
                 .build();
@@ -53,6 +54,7 @@ public class UsuarioMapper {
                 usuario.getEmail(),
                 usuario.getDocumentoIdentidad(),
                 usuario.getTelefono(),
+                usuario.getDireccion(),
                 usuario.getSalarioBase(),
                 toDTO(usuario.getRol())
         );

@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.reactive.TransactionalOperator;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
@@ -25,6 +26,7 @@ public class UsuarioHandler {
     private final UsuarioUseCase usuarioUseCase;
     private final RequestValidator requestValidator;
     private final UsuarioMapper usuarioMapper;
+    private final TransactionalOperator transactionalOperator;
 
     /**
      * Handles the request to save a new usuario.
@@ -34,11 +36,14 @@ public class UsuarioHandler {
      */
     public Mono<ServerResponse> listenSaveUsuario(ServerRequest serverRequest) {
         log.info("Request received for listenSaveUsuario");
-        return serverRequest.bodyToMono(UsuarioDTO.class)
+
+        Mono<Usuario> saveFlow = serverRequest.bodyToMono(UsuarioDTO.class)
                 .doOnNext(dto -> log.debug("Request body: {}", dto))
                 .flatMap(requestValidator::validate)
                 .map(usuarioMapper::toModel)
-                .flatMap(usuarioUseCase::saveUsuario)
+                .flatMap(usuarioUseCase::saveUsuario);
+
+        return transactionalOperator.transactional(saveFlow)
                 .flatMap(savedUsuario -> {
                     log.info("Successfully saved user with ID: {}", savedUsuario.getId());
                     ApiResponse<Usuario> apiResponse = ApiResponse.<Usuario>builder()
@@ -61,11 +66,14 @@ public class UsuarioHandler {
      */
     public Mono<ServerResponse> listenUpdateUsuario(ServerRequest serverRequest) {
         log.info("Request received for listenUpdateUsuario");
-        return serverRequest.bodyToMono(UsuarioDTO.class)
+
+        Mono<Usuario> updateFlow = serverRequest.bodyToMono(UsuarioDTO.class)
                 .doOnNext(dto -> log.debug("Request body: {}", dto))
                 .flatMap(requestValidator::validate)
                 .map(usuarioMapper::toModel)
-                .flatMap(usuarioUseCase::updateUsuario)
+                .flatMap(usuarioUseCase::updateUsuario);
+
+        return transactionalOperator.transactional(updateFlow)
                 .flatMap(savedUsuario -> {
                     log.info("Successfully updated user with ID: {}", savedUsuario.getId());
                     ApiResponse<Usuario> apiResponse = ApiResponse.<Usuario>builder()
@@ -121,7 +129,12 @@ public class UsuarioHandler {
                             .contentType(MediaType.APPLICATION_JSON)
                             .bodyValue(apiResponse);
                 })
-                .switchIfEmpty(ServerResponse.notFound().build());
+                .switchIfEmpty(ServerResponse.status(HttpStatus.NOT_FOUND)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(ApiResponse.<Void>builder()
+                                .codigo(HttpStatus.NOT_FOUND.value())
+                                .mensaje("No se encontraron datos para el ID proporcionado: " + id)
+                                .build()));
     }
 
     /**

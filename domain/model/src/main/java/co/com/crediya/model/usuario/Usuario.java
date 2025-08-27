@@ -29,6 +29,8 @@ public class Usuario {
 
     private String telefono;
 
+    private String direccion;
+
     private BigDecimal salarioBase;
 
     private Rol rol; // Nuevo campo de tipo Rol
